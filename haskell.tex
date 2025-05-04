@@ -43,7 +43,7 @@
     basicstyle=\footnotesize,% basic font setting
 }
 
-\title{Scalable Software with Elixir \\ Early Preview}
+\title{Scalable Software with Haskell \\ Early Preview}
 
 % \maketitle
 
@@ -92,16 +92,86 @@
 
 % [A Million-user Comet Application with Mochiweb, Part 3 | Richard Jones](https://www.notion.so/A-Million-user-Comet-Application-with-Mochiweb-Part-3-Richard-Jones-1ab572a03bb38150af49f6002d44fe2b?pvs=21)
 
-
 \chapter{Introduction}
 
 \section{Why Haskell}
+
+Functional language is declarative in nature and by definition has no side
+effect. Imperative language such as C permits mutating the global state, which
+increases comprehension complexity. Consider the following example:
+
+\begin{minted}{c}
+
+    int eventLoop() { 
+        int evt = receiveEvent();
+        switch (evt) { 
+            case EVENT_A: {
+                processEventA(evt);
+                break;
+            }
+            case EVENT_B:
+            case EVENT_C:
+        }
+    }
+
+    int processEventA(int evt) { 
+        /* processing */ 
+        reportEvent(evt);
+        global.state = PROCESSED_A; 
+    }
+\end{minted}
+
+Changing the \textit{global.state} may alter the system in scope larger than
+the function itself. \textit{global} can be either file or program scope, but
+either way publicly accessible to other parts of the program. Other parts of
+the program may alter either local or global behavior based on this variable.
+For example, eventLoop can condition on global.state and stops processing
+event. Imperative language like C does not provide any safe guard against this,
+as it simply provides an abstraction of the hardware, which is also imperative
+in nature.\\
+
+This increases the burden to reason about program correctness, and allows the
+program more susceptible to mistakes. C/C++ heavily encourages the use of
+\textit{const}, which is meant to lighten the cost of these issues.
+Fundamentally, C/C++ is designed to offer low-level control, so \textit{const}
+is a best practice but not the must. On a related note, Rust defaults all
+variables to be immutable and variables need to be declared with \textit{mut}
+to mutate. In any case, these reduces the likelihood of the problems described
+above, but does not eliminate them completely. The language fundamentally does
+not guarantee functional pureness, as it not an design objective.\\
+
+\section{Composability}
+
+Functional languages, on the other hand, promises \textit{no side-effects}. For
+a set of inputs, a function always produce the same output. This also allows
+\textit{composability}, akin to chaining UNIX utilities with pipe:
+
+\begin{minted}{bash}
+    cat input.txt | grep -rn needle | wc
+\end{minted}
+
+\begin{minted}{haskell}
+    let rv = count . (filter "needle") lines 
+\end{minted}
+
+Since the definitions are functional, Haskell compiler may collapse chained
+functions underneath the hood to provide an optimized compiled
+implementation.\\
+
+\section{Lock Elimination}
+
+Function programming has other very attractive properly. By eliminating shared
+variables entirely, the system becomes \textit{much} easier to reason about
+parallel behavior. While locks such as mutex are convenient to ensure atomicity
+during shared variable access, they introduce secondary
+
+TODO: describe how this helps with parallelization, mutex and locks,
 
 \section{Memory Safe Language}
 
 \section{Multicore Safety}
 
-\chapter{Functional Language}
+\section{Developer Efficiency}
 
 \part{Fundamental}
 
