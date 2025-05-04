@@ -94,8 +94,6 @@
 
 \chapter{Introduction}
 
-\section{Why Haskell}
-
 Functional language is declarative in nature and by definition has no side
 effect. Imperative language such as C permits mutating the global state, which
 increases comprehension complexity. Consider the following example:
@@ -138,7 +136,7 @@ is a best practice but not the must. On a related note, Rust defaults all
 variables to be immutable and variables need to be declared with \textit{mut}
 to mutate. In any case, these reduces the likelihood of the problems described
 above, but does not eliminate them completely. The language fundamentally does
-not guarantee functional pureness, as it not an design objective.\\
+not guarantee functional pureness, as it not an design objective.
 
 \section{Composability}
 
@@ -158,14 +156,17 @@ Since the definitions are functional, Haskell compiler may collapse chained
 functions underneath the hood to provide an optimized compiled
 implementation.\\
 
-\section{Lock Elimination}
+\section{Horizontal Scalability}
 
-Function programming has other very attractive properly. By eliminating shared
-variables entirely, the system becomes \textit{much} easier to reason about
-parallel behavior. While locks such as mutex are convenient to ensure atomicity
-during shared variable access, they introduce secondary
+Another attractive property of functional programming is horizontal
+scalability. By eliminating shared variables entirely, the system becomes
+\textit{much} easier to reason about parallel behavior. While locks such as
+mutex are convenient to ensure atomicity during shared variable access, they
+introduce secondary order problem such as performance reasoning. Any shared
+resources are subjected to contention, which can be a source a bugs or subtle
+throughput bottlenecks.\\
 
-TODO: describe how this helps with parallelization, mutex and locks,
+TODO: insert anecdote on throughput debug via over intensive locking.
 
 \section{Memory Safe Language}
 
