@@ -20,6 +20,7 @@
 \usepackage{graphicx}
 \usepackage{tikz}
 \usepackage{minted}
+\setminted{fontsize=\small} % applies to all minted environments
 \usetikzlibrary{automata, positioning, arrows}
 
 \usepackage{hyperref}
@@ -173,6 +174,71 @@ TODO: insert anecdote on throughput debug via over intensive locking.
 \section{Multicore Safety}
 
 \section{Developer Efficiency}
+
+\section{Expressiveness}
+
+To provide some context around the language expressiveness, we will walk
+through a simple socket programming example. Consider a socket programming
+example with the following requirements:
+
+\begin{itemize}
+    \item Create a socket
+    \item Serialize the payload
+    \item Send the payload
+    \item Receive the payload
+    \item Deserialize the payload
+    \item Process any error handling
+\end{itemize}
+
+The above requirement can be described by the following code:
+
+\begin{minted}{haskell}
+dispatch :: Integer -> DRequest -> Chan (RequestResponse) -> IO ()
+dispatch port req sq = do
+  bracket
+    (socket AF_INET Stream defaultProtocol)
+    (\sock -> close sock)
+    (\sock -> do
+       connect sock (SockAddrInet (fromIntegral port) 0)
+       resp <-
+         handle (\(_ :: SomeException) -> return $ CRespError) $ do
+           sendAll sock (DBL.toStrict $ serialize req)
+           maybeResp <-
+             runMaybeT
+               $ liftIO (recv sock 4096)
+                   >>= MaybeT . return . deserialize . DBL.fromStrict
+           return $ fromMaybe (CRespError) (maybeResp)
+       writeChan sq $ CResponse resp)
+\end{minted}
+
+The function uses two patterns, \textit{bracket} and \textit{handle}.
+\textit{bracket} provides a template to insert init, body and de-init
+functions. In this example, the init function creates a socket, and the de-init
+function closes the socket. This approximates RAII in C++. Inside the body, we
+use the \textit{handle} pattern, which returns \textit{CRespError} on any
+exception (eg. from either send or receive).\\
+
+Receiving and parsing the payload is a bit more complex, and will be described
+in detail below.\\
+
+\textit{recv} returns an \textit{IO ByteString} and is lifted into
+\textit{MaybeT IO ByteString} with liftIO. liftIO is contextual; in this case
+the type inference system lifts it into \textit{MaybeT IO ByteString} because
+the type on the other side of the bind operator.\\
+
+\textit{MaybeT . return . deserialize . DB.fromStrict} is a composited function.
+The bind operator extracts the value from the context and returns a ByteString.
+The \textit{ByteString} then goes through a series of transformation:
+\begin{itemize}
+    \item \textit{fromStrict} transforms ByteString to strict ByteString
+    \item \textit{deserialize} transforms strict ByteString to Maybe A
+    \item \textit{return} transforms Maybe A to IO Maybe A
+    \item \textit{MaybeT} transforms IO Maybe A to MaybeT IO A
+\end{itemize}
+
+Finally, \textit{runMaybeT} trasnforms \textit{MaybeT IO A} to \textit{IO Maybe
+A}, and the bind arrow operator unwraps and assigns \textit{Maybe A} to 
+\textit{maybeResp}.
 
 \part{Fundamental}
 
